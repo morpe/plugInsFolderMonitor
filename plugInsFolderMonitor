@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Percorsi plugin
+AU="/Library/Audio/Plug-Ins/Components"
+VST="/Library/Audio/Plug-Ins/VST"
+VST3="/Library/Audio/Plug-Ins/VST3"
+AAX="/Library/Application Support/Avid/Audio/Plug-Ins"
+
+# Colori ANSI
+WHITE="\033[1;37m"
+YELLOW="\033[1;33m"
+GREEN="\033[1;32m"
+NC="\033[0m"
+
+# Funzione help
+print_help() {
+    echo -e "${WHITE}plugInsFolderMonitor${NC} – Controlla, apre o pulisce le cartelle plugin audio su macOS."
+    echo
+    echo -e "${WHITE}Uso:${NC}"
+    echo -e "  ./plugInsFolderMonitor                 ${YELLOW}# Mostra le dimensioni delle cartelle${NC}"
+    echo -e "  ./plugInsFolderMonitor -remove -vst    ${YELLOW}# Cancella i plugin VST${NC}"
+    echo -e "  ./plugInsFolderMonitor -remove -vst3   ${YELLOW}# Cancella i plugin VST3${NC}"
+    echo -e "  ./plugInsFolderMonitor -remove -aax    ${YELLOW}# Cancella i plugin AAX${NC}"
+    echo -e "  ./plugInsFolderMonitor -vst            ${YELLOW}# Apre la cartella VST in Finder${NC}"
+    echo -e "  ./plugInsFolderMonitor -vst3           ${YELLOW}# Apre la cartella VST3 in Finder${NC}"
+    echo -e "  ./plugInsFolderMonitor -au             ${YELLOW}# Apre la cartella AU in Finder${NC}"
+    echo -e "  ./plugInsFolderMonitor -aax            ${YELLOW}# Apre la cartella AAX in Finder${NC}"
+    echo -e "  ./plugInsFolderMonitor -help           ${YELLOW}# Mostra questo messaggio di aiuto${NC}"
+    echo
+    echo -e "${WHITE}Note:${NC}"
+    echo -e "  - Reason supporta solo VST2 (non VST3)."
+    echo -e "  - La rimozione richiede sudo."
+    exit 0
+}
+
+# Funzione per stampare le dimensioni
+print_sizes() {
+    echo -e "${GREEN}Plugin Folder Sizes:${NC}"
+    echo -e "${WHITE}AU\t${YELLOW}$(du -sh "$AU" 2>/dev/null | awk '{print $1}')${NC}"
+    echo -e "${WHITE}VST\t${YELLOW}$(du -sh "$VST" 2>/dev/null | awk '{print $1}')${NC}"
+    echo -e "${WHITE}VST3\t${YELLOW}$(du -sh "$VST3" 2>/dev/null | awk '{print $1}')${NC}"
+    echo -e "${WHITE}AAX\t${YELLOW}$(du -sh "$AAX" 2>/dev/null | awk '{print $1}')${NC}"
+    echo -e "scrivi: pf -help per mostrare le altre opzioni"
+    echo 
+}
+
+# Funzione per rimuovere contenuto
+remove_plugins() {
+    case "$1" in
+        -aax)
+            echo -e "${GREEN}Rimuovo tutti i file AAX...${NC}"
+            sudo rm -rf "$AAX"/* ;;
+        -vst)
+            echo -e "${GREEN}Rimuovo tutti i file VST...${NC}"
+            sudo rm -rf "$VST"/* ;;
+        -vst3)
+            echo -e "${GREEN}Rimuovo tutti i file VST3...${NC}"
+            sudo rm -rf "$VST3"/* ;;
+        *)
+            echo -e "${YELLOW}Tipo non riconosciuto: $1${NC}"
+            exit 1 ;;
+    esac
+    echo -e "${GREEN}Operazione completata.${NC}"
+}
+
+# Funzione per aprire cartelle
+open_folder() {
+    case "$1" in
+        -au)
+            open "$AU" ;;
+        -vst)
+            open "$VST" ;;
+        -vst3)
+            open "$VST3" ;;
+        -aax)
+            open "$AAX" ;;
+        *)
+            echo -e "${YELLOW}Cartella non riconosciuta: $1${NC}"
+            exit 1 ;;
+    esac
+}
+
+# Main
+if [[ "$1" == "-help" || "$1" == "--help" ]]; then
+    print_help
+elif [[ "$1" == "-remove" && -n "$2" ]]; then
+    remove_plugins "$2"
+elif [[ "$1" =~ ^-(au|vst|vst3|aax)$ ]]; then
+    open_folder "$1"
+else
+    print_sizes
+fi
