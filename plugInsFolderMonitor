@@ -10,6 +10,7 @@ AAX="/Library/Application Support/Avid/Audio/Plug-Ins"
 WHITE="\033[1;37m"
 YELLOW="\033[1;33m"
 GREEN="\033[1;32m"
+BLUE="\033[1;34m"
 NC="\033[0m"
 
 # Funzione help
@@ -17,7 +18,7 @@ print_help() {
     echo -e "${WHITE}plugInsFolderMonitor${NC} – Controlla, apre o pulisce le cartelle plugin audio su macOS."
     echo
     echo -e "${WHITE}Uso:${NC}"
-    echo -e "  ./plugInsFolderMonitor                 ${YELLOW}# Mostra le dimensioni delle cartelle${NC}"
+    echo -e "  ./plugInsFolderMonitor                 ${YELLOW}# Mostra le dimensioni e conteggio plugin${NC}"
     echo -e "  ./plugInsFolderMonitor -remove -vst    ${YELLOW}# Cancella i plugin VST${NC}"
     echo -e "  ./plugInsFolderMonitor -remove -vst3   ${YELLOW}# Cancella i plugin VST3${NC}"
     echo -e "  ./plugInsFolderMonitor -remove -aax    ${YELLOW}# Cancella i plugin AAX${NC}"
@@ -33,14 +34,41 @@ print_help() {
     exit 0
 }
 
-# Funzione per stampare le dimensioni
+# Funzione per contare i file plugin (corretta per macOS)
+count_plugins() {
+    local path="$1"
+    local ext="$2"
+    
+    if [ ! -d "$path" ]; then
+        echo "0"
+        return
+    fi
+    
+    # Conta sia i bundle (directory) che i file con l'estensione specificata
+    find "$path" \( -type d -name "*$ext" -o -type f -name "*$ext" \) -print 2>/dev/null | wc -l | tr -d ' '
+}
+
+# Funzione per stampare le dimensioni e conteggi
 print_sizes() {
-    echo -e "${GREEN}Plugin Folder Sizes:${NC}"
-    echo -e "${WHITE}AU\t${YELLOW}$(du -sh "$AU" 2>/dev/null | awk '{print $1}')${NC}"
-    echo -e "${WHITE}VST\t${YELLOW}$(du -sh "$VST" 2>/dev/null | awk '{print $1}')${NC}"
-    echo -e "${WHITE}VST3\t${YELLOW}$(du -sh "$VST3" 2>/dev/null | awk '{print $1}')${NC}"
-    echo -e "${WHITE}AAX\t${YELLOW}$(du -sh "$AAX" 2>/dev/null | awk '{print $1}')${NC}"
-    echo -e "scrivi: pf -help per mostrare le altre opzioni"
+    echo -e "${GREEN}Plugin Folder Statistics:${NC}"
+    
+    # AU Components
+    au_count=$(count_plugins "$AU" ".component")
+    echo -e "${WHITE}AU\t${YELLOW}$(du -sh "$AU" 2>/dev/null | awk '{print $1}')${NC}\t${BLUE}${au_count} .component${NC}"
+    
+    # VST
+    vst_count=$(count_plugins "$VST" ".vst")
+    echo -e "${WHITE}VST\t${YELLOW}$(du -sh "$VST" 2>/dev/null | awk '{print $1}')${NC}\t${BLUE}${vst_count} .vst${NC}"
+    
+    # VST3
+    vst3_count=$(count_plugins "$VST3" ".vst3")
+    echo -e "${WHITE}VST3\t${YELLOW}$(du -sh "$VST3" 2>/dev/null | awk '{print $1}')${NC}\t${BLUE}${vst3_count} .vst3${NC}"
+    
+    # AAX
+    aax_count=$(count_plugins "$AAX" ".aaxplugin")
+    echo -e "${WHITE}AAX\t${YELLOW}$(du -sh "$AAX" 2>/dev/null | awk '{print $1}')${NC}\t${BLUE}${aax_count} .aaxplugin${NC}"
+    
+    echo -e "\nscrivi: pf -help per mostrare le altre opzioni"
     echo 
 }
 
